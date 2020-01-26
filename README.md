@@ -1,8 +1,6 @@
-## PHP Helper Functions
+## Laravel Helper functions
 
-A library of common PHP helper functions and classes. Supports PHP 5.6.
-
-Only add Non-laravel functions to this package. For Laravel dependent code, refer to [Laravel Helpers](https://bitbucket.org/elegantmedia/laravel-helpers/src) library.
+Supports Laravel 5.7
 
 ### Installation Instructions
 
@@ -11,146 +9,112 @@ Add the repository to `composer.json`
 "repositories": [
 	{
 	    "type":"vcs",
-	    "url":"git@bitbucket.org:elegantmedia/php-helpers.git"
+	    "url":"git@bitbucket.org:elegantmedia/laravel-helpers.git"
 	}
 ]
 ```
 
 ```
-composer require emedia/php-helpers
+composer require emedia/helpers
 ```
 
 ### Available Commands
 
-#### Date/Time Functions
+
+#### Refresh Database
+
+Not available in `production` environment.
 ```
-// Get formatted microtimestamp. Example: `2008_07_14_010813.98232`
-Timing::microTimestamp()
+// Remove all existing tables and re-seed the database
+php artisan db:refresh
 
-// Convert a time string to a MySQL compatible date/time format.
-Timing::convertToDbTime($string)
+// Reset the database, but don't migrate
+php artisan db:refresh --nomigrate
 
-// Convert a UTC timestring to current server's timezone
-Timing::toServerTimezone($UTCTimeString, $onlyDate = false)
-```
-
-#### File/Directory Handling
-```
-// Create a directory if it doesn't exist
-DirManager::makeDirectoryIfNotExists($dirPath, $permissions = 0775, $recursive = true)
-
-// Append a stub to a file, identified by the unique first line
-FileEditor::appendStubIfSectionNotFound($filePath, $stubPath)
-
-// Append a stub to a file
-FileEditor::appendStub($filePath, $stubPath, $verifyPathsExists = true)
-
-// Check if a string is in file
-FileManager::isTextInFile($filePath, $string, $caseSensitive = true)
-
-// Check if two files are similar (by size and hash)
-FileManager::areFilesSimilar($path1, $path2)
-
-// Read the first line from a file
-FileManager::readFirstLine($filePath, $trim = true)
+// Reset the database, but don't seed
+php artisan db:refresh --noseed
 ```
 
-#### Load Classes
-
+#### Composer Autoload
 ```
-// Load (include) all php files from a given directory
-Loader::includeAllFilesFromDir($dirPath)
+php artisan composer:dump-autoload
 ```
 
-#### Array Helpers
-```
-// Replace an existing key of an array with a new one
-replace_array_key($array = [], $existingKey, $newKey, $recursive = false)
+#### Distribute Bitbucket Deploy SSH Keys
 
-// Convert camelCase type array keys to snake case
-array_keys_snake_case(&$mixed, $recursive = true)
-
-// Convert array keys to camelCase
-array_keys_camel_case(&$mixed, $recursive = true)
-```
+For a server to access private repositories you need to assign the SSH PUBLIC Keys. Run the command below and follow the prompts. You'll need Bitbucket username, password and the public key.
 
 ```
-// Get an array and key it by a given key
-array_key_by($array, $keyBy)
-
-Example:
-[
-       [ 'name' => 'john', 'age' => 45 ],
-       [ 'name' => 'jane', 'age', => 32 ],
-]
-*
-becomes
-[
-       'john' => [ 'age' => 45 ],
-       'jane' => [ 'age' => 32 ],
-]
+php artisan setup:production:connect-deploy-keys
 ```
 
-###### Recursive Intersection
+### Conversions
 
 ```
-// get matching subset of array. Similar to `array_intersect`, but does recursively.
-\EMedia\PHPHelpers\Util\Arr::intersectRecursive($source, $subset);
+// Convert a UTC timestring to existing server's timezone
+TimeConverters::toServerTimezone($UTCTimeString, $onlyDate = false)
 ```
 
-###### Is an associative array?
+### Resources
 
 ```
-// Check if an array is an associative array
-\EMedia\PHPHelpers\Util\Arr::isAssocArray($array);
+// Guess the primary resource path from a given URL.
+entity_resource_path($url = '')
 ```
 
+### Email
 
-#### String Helpers
+Email to webmaster with a simple text message.
 
+Set the variables in `.env` file
 ```
-// Convert an 'existing_snake_case' to 'existing snake case'
-reverse_snake_case($string)
+WEBMASTER_EMAIL="webmaster@example.com"
+OR
+WEBMASTER_EMAIL="webmaster@example.com|sysadmin@example.com"
 
-// Generate a random string without any ambiguous characters
-random_unambiguous($length = 16)
-
-// Add or remove slashes to strings (if it doesn't exist)
-str_with_trailing_slash($path)
-str_without_trailing_slash($path)
-str_without_leading_slash($path)
-
-// Convert a block of text and split it into lines
-Str::textToLinesArray($text, $delimiters = null)
-Example:
-one, two,   three
-four
-five
-
-Returns:
-['one', 'two', 'three', 'four', 'five']
+(Optional)
+WEBMATER_REPLY_TO="reply@example.com
 ```
 
-#### Validation Helpers
-
 ```
-// Check all values are !empty. Throws an exception if at least one value is empty
-check_all_present()
-
-Example: check_all_present($var1, $var2, $var5)
+Webmaster::sendEmail($message, $subject = 'SYSTEM MESSAGE')
 ```
 
-#### Conversions
+### Database
+
+Create unique database tokens for a given column. Use this trait in an Eloquent model.
 
 ```
-// Convert bytes to a human readble format
-ConvertSizes::bytesToHumans($bytes, $precision = 2)
-// Example output: '200 KB', '1 MB', '3 TB' etc
+use \EMedia\Helpers\Database\CreatesUniqueTokens;
+```
+Then call the function
 
-// Converts a string with numbers to a full number
-TypeCast::convertToInteger($string)
+```
+self::newUniqueToken('confirmation_token')
+```
 
-// Convert a string numeric to a float
-TypeCast::convertToFloat($value)
-Example: 1,232.12 -> becomes -> (float) 1232.12
+### Components
+
+#### Menu
+
+Build a Menu from various packages, by injecting menu items.
+
+```
+$m = (new \EMedia\Helpers\Components\Menu\MenuItem())->setText('Users')
+						  ->setResource('manage.users.index')
+						  ->setOrder(2)
+						  ->setClass('fas fa-users');
+
+// instead of setResource(), you and send a url with setUrl()
+
+\EMedia\Helpers\Components\Menu\MenuBar::add($m);
+OR
+\EMedia\Helpers\Components\Menu\MenuBar::add($m, 'second-menu');
+```
+
+Getting the items back
+```
+\EMedia\Helpers\Components\Menu\MenuBar::menuItems();
+OR
+\EMedia\Helpers\Components\Menu\MenuBar::menuItems('second-menu');
 ```
